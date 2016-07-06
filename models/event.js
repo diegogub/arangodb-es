@@ -4,6 +4,9 @@ const joi = require('joi');
 const db = require('@arangodb').db;
 const events = module.context.collection('events');
 
+const event_col = module.context.collectionName('events');
+const index_col = module.context.collectionName('indexes');
+
 module.exports = {
   schema: {
     // Describe the attributes with joi here
@@ -45,20 +48,22 @@ module.exports = {
   storeEvent(event) {
     var r = db._executeTransaction({
       collections: {
-        write: [ "es_events", "es_indexes" ]
+        write: [ event_col, index_col ],
+        read : snapshot_col
       },
       action: function (p) {
         var db = require("internal").db;
         var tres = { error : false }
         var q = db._createStatement({
          "query" : `
-          FOR e IN es_events
+          FOR e IN @@col
           FILTER e.stream == @stream
           SORT e.version DESC
           LIMIT 1
           RETURN e.version
          `
        });
+       q.bind("@col",p.col.events);
        q.bind("stream",p.event.stream);
 
        var res = q.execute().toArray();
@@ -85,14 +90,14 @@ module.exports = {
 
        // check ID
        if (tres.error == false && event._key != null) {
-        if (db.es_events.exists(event._key)){
+        if (db[p.col.events].exists(event._key)){
           tres.exist = true
         }
        }
 
        if ( !tres.exist && !tres.error) {
          event.version = curVersion + 1;
-         var meta = db.es_events.save(event);
+         var meta = db[p.col.events].save(event);
          tres._key = meta._key
          tres.version = event.version
        }
@@ -100,7 +105,7 @@ module.exports = {
        return tres;
       },
 
-      params : { event : event }
+      params : { event : event , col : { events : event_col }
 
     });
 
@@ -116,13 +121,14 @@ module.exports = {
   range(stream,from,to) {
     var q = db._createStatement({
      "query" : `
-      FOR e IN es_events
+      FOR e IN @@col
       FILTER e.stream == @stream
       FILTER e.version >= @from && e.version <= @to
       SORT e.version ASC
       RETURN e
      `
    });
+   q.bind("@col",event_col);
    q.bind("stream",stream);
    q.bind("from",from);
    q.bind("to",to);
@@ -131,12 +137,13 @@ module.exports = {
   streamExist(stream,version){
     var q = db._createStatement({
      "query" : `
-      FOR e IN es_events
+      FOR e IN @@col
       FILTER e.stream == @stream && e.version == @version
       LIMIT 1
       RETURN e.stream
      `
    });
+   q.bind("@col",event_col);
    q.bind("stream",stream);
    q.bind("version",version);
    var res = q.execute().toArray();
@@ -149,11 +156,12 @@ module.exports = {
   getEvent(stream,version) {
     var q = db._createStatement({
      "query" : `
-      FOR e IN es_events
+      FOR e IN @@col
       FILTER e.stream == @stream && e.version == @version
       RETURN e
      `
    });
+   q.bind("@col",event_col);
    q.bind("stream",stream);
    q.bind("version",version);
 

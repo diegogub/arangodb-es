@@ -8,6 +8,10 @@ const documentCollections = [
   "snapshots"
 ];
 
+const event_col = module.context.collectionName('events');
+const snapshot_col = module.context.collectionName('snapshots);
+const index_col = module.context.collectionName('indexes');
+
 for (const localName of documentCollections) {
   const qualifiedName = module.context.collectionName(localName);
   if (!db._collection(qualifiedName)) {
@@ -17,7 +21,8 @@ for (const localName of documentCollections) {
   }
 }
 
- db.es_events.ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: true });
- db.es_indexes.ensureIndex({ type: "persistent", fields: [ "stream_group", "key","value" ], unique: true });
- db.es_snapshots.ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: false});
- db.es_snapshots.ensureIndex({ type: "persistent", fields: [ "timestamp" ], unique: false});
+
+ db[event_col].ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: true });
+ db[index_col].ensureIndex({ type: "persistent", fields: [ "stream_group", "key","value" ], unique: true });
+ db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: false});
+ db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "timestamp" ], unique: false});
