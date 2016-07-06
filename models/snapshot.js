@@ -1,11 +1,15 @@
 'use strict';
 const _ = require('lodash');
 const joi = require('joi');
+const db = require('@arangodb').db;
 
 module.exports = {
   schema: {
-    // Describe the attributes with joi here
-    _key: joi.string()
+    _key: joi.string(),
+    stream : joi.string().required(),
+    version : joi.number().required(),
+    data : joi.object().default({}),
+    timestamp : joi.date().default(new Date())
   },
   forClient(obj) {
     // Implement outgoing transformations here
@@ -15,5 +19,23 @@ module.exports = {
   fromClient(obj) {
     // Implement incoming transformations here
     return obj;
+  },
+  getLast(stream) {
+        var q = db._createStatement({
+         "query" : `
+          FOR s IN es_snapshots
+          FILTER s.stream == @stream
+          SORT e.timestamp DESC
+          LIMIT 1
+          RETURN s
+         `
+       });
+       q.bind("stream",stream);
+       var res = q.execute().toArray();
+       if (res.length == 0 ){
+         return {}
+       }else{
+         return res[0]
+       }
   }
 };

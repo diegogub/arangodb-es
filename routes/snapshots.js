@@ -6,6 +6,8 @@ const status = require('statuses');
 const errors = require('@arangodb').errors;
 const createRouter = require('@arangodb/foxx/router');
 const Snapshot = require('../models/snapshot');
+const Event = require('../models/event');
+const db = require('@arangodb').db;
 
 const snapshots = module.context.collection('snapshots');
 const keySchema = joi.string().required()
@@ -20,29 +22,19 @@ const HTTP_CONFLICT = status('conflict');
 const router = createRouter();
 module.exports = router;
 
-const NewSnapshot = Object.assign({}, Snapshot, {
-  schema: Object.assign({}, Snapshot.schema, {
-    _from: joi.string(),
-    _to: joi.string()
-  })
-});
-
-
-router.get(function (req, res) {
-  res.send(snapshots.all());
-}, 'list')
-.response([Snapshot], 'A list of snapshots.')
-.summary('List all snapshots')
-.description(dd`
-  Retrieves a list of all snapshots.
-`);
-
-
 router.post(function (req, res) {
   const snapshot = req.body;
+
+  // check if stream exist
+  if (!Event.streamExist(snapshot.stream,snapshot.version)) {
+    res.status(404);
+    res.send({ error : true, errType : "event do not exist"});
+    return
+  }
+
   let meta;
   try {
-    meta = snapshots.save(snapshot._from, snapshot._to, snapshot);
+    meta = snapshots.save(snapshot);
   } catch (e) {
     if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
       throw httpError(HTTP_CONFLICT, e.message);
@@ -51,12 +43,9 @@ router.post(function (req, res) {
   }
   Object.assign(snapshot, meta);
   res.status(201);
-  res.set('location', req.makeAbsolute(
-    req.reverse('detail', {key: snapshot._key})
-  ));
   res.send(snapshot);
 }, 'create')
-.body(NewSnapshot, 'The snapshot to create.')
+.body(Snapshot, 'The snapshot to create.')
 .response(201, Snapshot, 'The created snapshot.')
 .error(HTTP_CONFLICT, 'The snapshot already exists.')
 .summary('Create a new snapshot')
@@ -66,11 +55,12 @@ router.post(function (req, res) {
 `);
 
 
-router.get(':key', function (req, res) {
+router.get(':stream/:key', function (req, res) {
   const key = req.pathParams.key;
+  const stream = req.pathParams.stream;
   let snapshot
   try {
-    snapshot = snapshots.document(key);
+    snapshot = snapshots.document(stream + '_' + key);
   } catch (e) {
     if (e.isArangoError && e.errorNum === ARANGO_NOT_FOUND) {
       throw httpError(HTTP_NOT_FOUND, e.message);
@@ -79,6 +69,7 @@ router.get(':key', function (req, res) {
   }
   res.send(snapshot);
 }, 'detail')
+.pathParam('stream', keySchema)
 .pathParam('key', keySchema)
 .response(Snapshot, 'The snapshot.')
 .summary('Fetch a snapshot')
@@ -86,34 +77,25 @@ router.get(':key', function (req, res) {
   Retrieves a snapshot by its key.
 `);
 
-
-router.put(':key', function (req, res) {
-  const key = req.pathParams.key;
-  const snapshot = req.body;
-  let meta;
+router.get(':stream/last', function (req, res) {
+  const stream = req.pathParams.stream;
+  let snapshot
   try {
-    meta = snapshots.replace(key, snapshot);
+    snapshot = Snapshot.getLast(stream)
   } catch (e) {
     if (e.isArangoError && e.errorNum === ARANGO_NOT_FOUND) {
       throw httpError(HTTP_NOT_FOUND, e.message);
     }
-    if (e.isArangoError && e.errorNum === ARANGO_CONFLICT) {
-      throw httpError(HTTP_CONFLICT, e.message);
-    }
     throw e;
   }
-  Object.assign(snapshot, meta);
   res.send(snapshot);
-}, 'replace')
-.pathParam('key', keySchema)
-.body(Snapshot, 'The data to replace the snapshot with.')
-.response(Snapshot, 'The new snapshot.')
-.summary('Replace a snapshot')
+}, 'detail')
+.pathParam('stream', keySchema)
+.response(Snapshot, 'The snapshot.')
+.summary('Fetch a snapshot')
 .description(dd`
-  Replaces an existing snapshot with the request body and
-  returns the new document.
+  Retrieves a snapshot by its key.
 `);
-
 
 
 router.delete(':key', function (req, res) {

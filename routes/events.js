@@ -6,6 +6,7 @@ const status = require('statuses');
 const errors = require('@arangodb').errors;
 const createRouter = require('@arangodb/foxx/router');
 const Event = require('../models/event');
+const Group = require('../models/group');
 
 const events = module.context.collection('events');
 const keySchema = joi.string().required()
@@ -22,14 +23,6 @@ const router = createRouter();
 module.exports = router;
 
 
-router.get(function (req, res) {
-  res.send(events.all());
-}, 'list')
-.response([Event], 'A list of events.')
-.summary('List all events')
-.description(dd`
-  Retrieves a list of all events.
-`);
 
 
 router.post(':stream',function (req, res) {
@@ -44,19 +37,18 @@ router.post(':stream',function (req, res) {
 
   let meta;
   try {
-    meta = events.save(event);
+    var r = Event.storeEvent(event)
   } catch (e) {
     if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
       throw httpError(HTTP_CONFLICT, e.message);
     }
     throw e;
   }
+
   Object.assign(event, meta);
   res.status(201);
-  res.set('location', req.makeAbsolute(
-    req.reverse('detail', {key: event._key})
-  ));
-  res.send(event);
+  res.send(r)
+  //res.send({ id: event._key, error : error, errType : errorType, version : event.version, exist: exist })
 }, 'create')
 .pathParam('stream', keySchema)
 .body(Event, 'The event to create.')
@@ -68,26 +60,72 @@ router.post(':stream',function (req, res) {
 `);
 
 
-router.get(':key', function (req, res) {
-  const key = req.pathParams.key;
+router.get(':stream/:from/:to', function (req, res) {
+  const stream = req.pathParams.stream;
+  const from = req.pathParams.from;
+  const to = req.pathParams.to;
+
   let event
-  try {
-    event = events.document(key);
-  } catch (e) {
-    if (e.isArangoError && e.errorNum === ARANGO_NOT_FOUND) {
-      throw httpError(HTTP_NOT_FOUND, e.message);
-    }
-    throw e;
-  }
+  event = Event.range(stream,from,to)
   res.send(event);
 }, 'detail')
-.pathParam('key', keySchema)
+.pathParam('stream', keySchema)
+.pathParam('from', versionSchema)
+.pathParam('to', versionSchema)
 .response(Event, 'The event.')
 .summary('Fetch a event')
 .description(dd`
-  Retrieves a event by its key.
+   Range stream
 `);
 
+router.get(':stream/:version', function (req, res) {
+  const stream = req.pathParams.stream;
+  const version = req.pathParams.version;
+
+  let event
+  event = Event.getEvent(stream,version)
+  res.send(event);
+}, 'detail')
+.pathParam('stream', keySchema)
+.pathParam('version', versionSchema)
+.response(Event, 'The event.')
+.summary('Fetch a event')
+.description(dd`
+             get event by version
+`);
+
+// create stream group
+router.post('group/:name',function (req, res) {
+  const name = req.pathParams.name;
+
+  const event = req.body;
+  event.stream = stream
+
+  let meta;
+  try {
+    var r = Event.storeEvent(event)
+  } catch (e) {
+    if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
+      throw httpError(HTTP_CONFLICT, e.message);
+    }
+    throw e;
+  }
+
+  Object.assign(event, meta);
+  res.status(201);
+  res.send(r)
+  //res.send({ id: event._key, error : error, errType : errorType, version : event.version, exist: exist })
+}, 'create')
+.pathParam('name', keySchema)
+.body(Group, 'The event group to create.')
+.response(201, Group, 'The stream group created .')
+.error(HTTP_CONFLICT, 'The stream group already exists.')
+.summary('Create a new stream group')
+.description(dd`
+    Create new stream group.
+`);
+
+/*
 router.delete(':stream/:snapshot', function (req, res) {
   const stream = req.pathParams.stream;
   const snapshot = req.pathParams.snapshot;
@@ -107,3 +145,27 @@ router.delete(':stream/:snapshot', function (req, res) {
 .description(dd`
   Truncate stream until snapshot
 `);
+*/
+
+/*
+router.get(':stream/merge',function (req, res) {
+    var q = db._createStatement({
+   "query" : `
+    FOR e IN es_events
+    FILTER e.stream == @stream
+    SORT e.version DESC
+    LIMIT 1
+    RETURN e.version
+   `
+  });
+  q.bind("stream",p.event.stream);
+
+  var res = q.execute().toArray();
+  res.send(events.all());
+}, 'list')
+.response([Event], 'A list of events.')
+.summary('List all events')
+.description(dd`
+  Retrieves a list of all events.
+`);
+*/
