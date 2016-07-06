@@ -105,7 +105,7 @@ module.exports = {
        return tres;
       },
 
-      params : { event : event , col : { events : event_col }
+      params : { event : event , col : { events : event_col }}
 
     });
 
