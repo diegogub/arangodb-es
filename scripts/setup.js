@@ -9,7 +9,7 @@ const documentCollections = [
 ];
 
 const event_col = module.context.collectionName('events');
-const snapshot_col = module.context.collectionName('snapshots);
+const snapshot_col = module.context.collectionName('snapshots');
 const index_col = module.context.collectionName('indexes');
 
 for (const localName of documentCollections) {
