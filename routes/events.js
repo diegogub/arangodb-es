@@ -78,6 +78,35 @@ router.get(':stream/:from/:to', function (req, res) {
    Range stream
 `);
 
+router.get('all/:from/:to', function (req, res) {
+  const from = req.pathParams.from;
+  const to = req.pathParams.to;
+
+  let event
+  event = Event.rangeAll(from,to)
+  res.send(event);
+}, 'detail')
+.pathParam('from', versionSchema)
+.pathParam('to', versionSchema)
+.response(Event, 'The event.')
+.summary('Fetch a event')
+.description(dd`
+   Range stream
+`);
+
+router.get('all/version', function (req, res) {
+  const from = req.pathParams.from;
+  const to = req.pathParams.to;
+
+  let v
+  v = Event.allVersion()
+  res.send({ correlation : v });
+}, 'detail')
+.summary('main correlation version')
+.description(dd`
+   Range stream
+`);
+
 router.get(':stream/:version', function (req, res) {
   const stream = req.pathParams.stream;
   const version = req.pathParams.version;

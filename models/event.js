@@ -152,6 +152,38 @@ module.exports = {
    q.bind("to",to);
    return q.execute().toArray();
   },
+  rangeAll(from,to) {
+    var q = db._createStatement({
+     "query" : `
+      FOR e IN @@col
+      FILTER e.correlation >= @from && e.correlation <= @to
+      SORT e.correlation ASC
+      RETURN e
+     `
+   });
+   q.bind("@col",event_col);
+   q.bind("from",from);
+   q.bind("to",to);
+   return q.execute().toArray();
+  },
+  allVersion() {
+    var q = db._createStatement({
+     "query" : `
+      FOR e IN @@col
+      SORT e.correlation DESC
+      LIMIT 1
+      RETURN e.correlation
+     `
+   });
+   q.bind("@col",event_col);
+   var res = q.execute().toArray();
+
+   if (res.length == 0 ) {
+     return -1
+   }else {
+    return res[0]
+   }
+  },
   streamExist(stream,version){
     var q = db._createStatement({
      "query" : `
