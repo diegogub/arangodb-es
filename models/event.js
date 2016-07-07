@@ -5,6 +5,7 @@ const db = require('@arangodb').db;
 const events = module.context.collection('events');
 
 const event_col = module.context.collectionName('events');
+const snapshot_col = module.context.collectionName('snapshot');
 const index_col = module.context.collectionName('indexes');
 
 module.exports = {
@@ -34,7 +35,7 @@ module.exports = {
     checks : joi.object().default({}),
 
     // event timestamp
-    timestamp : joi.date().default(new Date())
+    correlation : joi.number().default(-1)
   },
   forClient(obj) {
     // Implement outgoing transformations here
@@ -48,8 +49,7 @@ module.exports = {
   storeEvent(event) {
     var r = db._executeTransaction({
       collections: {
-        write: [ event_col, index_col ],
-        read : snapshot_col
+        write: [ event_col, index_col ]
       },
       action: function (p) {
         var db = require("internal").db;
@@ -80,6 +80,23 @@ module.exports = {
          curVersion = res[0];
        }
 
+       var cq = db._createStatement({
+         "query" : `
+          FOR e IN @@col
+          SORT e.correlation DESC
+          LIMIT 1
+          RETURN e.correlation
+         `
+       });
+       cq.bind("@col",p.col.events);
+       var cres = cq.execute().toArray();
+       console.log(cres)
+       if (cres.length == 0 ){
+         event.correlation = 0;
+       }else{
+         event.correlation = cres[0] + 1;
+       }
+
        // check version lock
        if (event.version >= 0) {
          if (curVersion != event.version){
@@ -99,6 +116,7 @@ module.exports = {
          event.version = curVersion + 1;
          var meta = db[p.col.events].save(event);
          tres._key = meta._key
+         tres.correlation = event.correlation
          tres.version = event.version
        }
 

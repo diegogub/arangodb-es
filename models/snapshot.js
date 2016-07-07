@@ -2,6 +2,7 @@
 const _ = require('lodash');
 const joi = require('joi');
 const db = require('@arangodb').db;
+const event_col = module.context.collectionName('events');
 
 module.exports = {
   schema: {
@@ -23,13 +24,14 @@ module.exports = {
   getLast(stream) {
         var q = db._createStatement({
          "query" : `
-          FOR s IN es_snapshots
+          FOR s IN @@col
           FILTER s.stream == @stream
           SORT e.timestamp DESC
           LIMIT 1
           RETURN s
          `
        });
+       q.bind("@col",p.col.events);
        q.bind("stream",stream);
        var res = q.execute().toArray();
        if (res.length == 0 ){
