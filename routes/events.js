@@ -91,7 +91,7 @@ router.get('all/:from/:to', function (req, res) {
 .response(Event, 'The event.')
 .summary('Fetch a event')
 .description(dd`
-   Range stream
+   Range main stream
 `);
 
 router.get('all/version', function (req, res) {
@@ -104,7 +104,7 @@ router.get('all/version', function (req, res) {
 }, 'detail')
 .summary('main correlation version')
 .description(dd`
-   Range stream
+             Return main correlation version
 `);
 
 router.get(':stream/:version', function (req, res) {
@@ -120,36 +120,5 @@ router.get(':stream/:version', function (req, res) {
 .response(Event, 'The event.')
 .summary('Fetch a event')
 .description(dd`
-             get event by version
-`);
-
-// create stream group
-router.post('group/:name',function (req, res) {
-  const name = req.pathParams.name;
-
-  const event = req.body;
-  event.stream = stream
-
-  let meta;
-  try {
-    var r = Event.storeEvent(event)
-  } catch (e) {
-    if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
-      throw httpError(HTTP_CONFLICT, e.message);
-    }
-    throw e;
-  }
-
-  Object.assign(event, meta);
-  res.status(201);
-  res.send(r)
-  //res.send({ id: event._key, error : error, errType : errorType, version : event.version, exist: exist })
-}, 'create')
-.pathParam('name', keySchema)
-.body(Group, 'The event group to create.')
-.response(201, Group, 'The stream group created .')
-.error(HTTP_CONFLICT, 'The stream group already exists.')
-.summary('Create a new stream group')
-.description(dd`
-    Create new stream group.
+             Get event by version
 `);

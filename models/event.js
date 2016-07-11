@@ -32,7 +32,7 @@ module.exports = {
     data : joi.object().default({}),
 
     // uniqueness check
-    checks : joi.object().default({}),
+    checks : joi.array().items(joi.string()),
 
     // event timestamp
     correlation : joi.number().default(-1)

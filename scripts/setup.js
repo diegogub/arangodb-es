@@ -5,7 +5,8 @@ const documentCollections = [
   "indexes",
   "groups",
   "logs",
-  "snapshots"
+  "snapshots",
+  "consumers"
 ];
 
 const event_col = module.context.collectionName('events');
