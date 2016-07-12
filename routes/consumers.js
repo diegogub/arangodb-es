@@ -7,6 +7,7 @@ const errors = require('@arangodb').errors;
 const createRouter = require('@arangodb/foxx/router');
 const Consumer = require('../models/consumer');
 const ConsumerUpdate = require('../models/consumer_update');
+const ConsumerStatus = require('../models/consumer_status');
 
 const consumers = module.context.collection('consumers');
 const keySchema = joi.string().required()
@@ -74,10 +75,9 @@ router.post(':key',function (req, res) {
 
 router.get(':key',function (req, res) {
   const key = req.pathParams.key;
-  const consumer = req.body;
-  let meta;
+  let consumer;
   try {
-    meta = consumers.update(key,consumer)
+    consumer = consumers.document(key)
   } catch (e) {
     if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
       throw httpError(HTTP_CONFLICT, e.message);
@@ -85,14 +85,61 @@ router.get(':key',function (req, res) {
     throw e;
   }
 
-  Object.assign(consumer, meta);
-  res.status(201);
+  res.status(200);
   res.send(consumer)
 }, 'create')
 .pathParam('key', keySchema)
-.response(201, Consumer, 'The updated consumer.')
+.response(201, Consumer, 'Gets consumer data')
 .error(HTTP_CONFLICT, 'The consumer do not exist.')
-.summary('updates consumer')
+.summary('gets consumer data')
 .description(dd`
-             Updates consumer data.
+             Gets consumer data.
+`);
+
+// get consumer status
+router.get(':key/status',function (req, res) {
+  const key = req.pathParams.key;
+  let consumer;
+  try {
+    consumer = consumers.document(key + '_status')
+  } catch (e) {
+    if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
+      throw httpError(HTTP_CONFLICT, e.message);
+    }
+    throw e;
+  }
+
+  res.status(200);
+  res.send(consumer)
+}, 'create')
+.pathParam('key', keySchema)
+.response(201, Consumer, 'Gets consumer status')
+.error(HTTP_CONFLICT, 'The consumer do not exist.')
+.summary('gets consumer data')
+.description(dd`
+             Gets consumer status.
+`);
+
+// update consumer status
+router.post('status',function (req, res) {
+  const update = req.body;
+  let consumer;
+  try {
+    consumer = ConsumerStatus.updateStatus(update)
+  } catch (e) {
+    if (e.isArangoError && e.errorNum === ARANGO_DUPLICATE) {
+      throw httpError(HTTP_CONFLICT, e.message);
+    }
+    throw e;
+  }
+
+  res.status(200);
+  res.send(consumer)
+}, 'create')
+.body(ConsumerStatus,'Consumer new status')
+.response(201, Consumer, 'update consumer status')
+.error(HTTP_CONFLICT, 'The consumer do not exist.')
+.summary('gets consumer data')
+.description(dd`
+             Updates consumer status.
 `);

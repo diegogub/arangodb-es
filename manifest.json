@@ -1,6 +1,6 @@
 {
     "name": "evento",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "description": "eventstore for arangodb",
     "engines": {
         "arangodb": "^3.0.0"
@@ -10,7 +10,14 @@
     "main": "main.js",
     "scripts": {
         "setup": "scripts/setup.js",
-        "teardown": "scripts/teardown.js"
+        "teardown": "scripts/teardown.js",
+        "postback" : "scripts/postback.js"
+    },
+    "configuration": {
+      "nsq": {
+        "description": "nsqd server",
+        "type": "string"
+      }
     },
     "tests": "test/**/*.js"
 }

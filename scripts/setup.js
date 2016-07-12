@@ -1,5 +1,6 @@
 'use strict';
 const db = require('@arangodb').db;
+const queues = require('@arangodb/foxx/queues');
 const documentCollections = [
   "events",
   "indexes",
@@ -30,3 +31,6 @@ for (const localName of documentCollections) {
 
  db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: false});
  db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "timestamp" ], unique: false});
+
+ // create queues
+ queues.create("postback")

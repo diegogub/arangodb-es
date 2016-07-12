@@ -8,6 +8,7 @@ const event_col = module.context.collectionName('events');
 const snapshot_col = module.context.collectionName('snapshot');
 const index_col = module.context.collectionName('indexes');
 
+
 module.exports = {
   schema: {
     // Describe the attributes with joi here
@@ -90,7 +91,6 @@ module.exports = {
        });
        cq.bind("@col",p.col.events);
        var cres = cq.execute().toArray();
-       console.log(cres)
        if (cres.length == 0 ){
          event.correlation = 0;
        }else{

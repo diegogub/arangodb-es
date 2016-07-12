@@ -1,5 +1,6 @@
 'use strict';
 const dd = require('dedent');
+const request = require('@arangodb/request');
 const joi = require('joi');
 const httpError = require('http-errors');
 const status = require('statuses');
@@ -19,8 +20,12 @@ const ARANGO_CONFLICT = errors.ERROR_ARANGO_CONFLICT.code;
 const HTTP_NOT_FOUND = status('not found');
 const HTTP_CONFLICT = status('conflict');
 
+const queues = require('@arangodb/foxx/queues');
+
 const router = createRouter();
 module.exports = router;
+
+const nsqd = module.context.configuration.nsq
 
 
 
@@ -45,7 +50,11 @@ router.post(':stream',function (req, res) {
     throw e;
   }
 
-  Object.assign(event, meta);
+  Object.assign(event, r);
+
+  // Post into NSQ queue
+  request.post(nsqd + "/pub?topic=evento", { body : event, json: true})
+
   res.status(201);
   res.send(r)
   //res.send({ id: event._key, error : error, errType : errorType, version : event.version, exist: exist })

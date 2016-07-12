@@ -15,6 +15,7 @@ module.exports = {
     postback : joi.string().uri( { scheme : [ 'http', 'https' ] }).required(),
     active : joi.boolean().default(true),
     description : joi.string().default(''),
+    status :joi.boolean().default(false)
   },
   forClient(obj) {
     // Implement outgoing transformations here
