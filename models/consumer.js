@@ -12,7 +12,6 @@ module.exports = {
   schema: {
     _key : joi.string(),
     name : joi.string().required(),
-    postback : joi.string().uri( { scheme : [ 'http', 'https' ] }).required(),
     active : joi.boolean().default(true),
     description : joi.string().default(''),
     status :joi.boolean().default(false)
