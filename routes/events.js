@@ -53,12 +53,10 @@ router.post(':stream',function (req, res) {
   Object.assign(event, r);
 
   console.log(postback)
-  if (postback != null && postback != ""){
    try {
    request.post(postback, { body : event, json: true})
    }catch(err){
    }
-  }
 
   res.status(201);
   res.send(r)
