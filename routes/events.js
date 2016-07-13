@@ -25,7 +25,7 @@ const queues = require('@arangodb/foxx/queues');
 const router = createRouter();
 module.exports = router;
 
-const nsqd = module.context.configuration.nsq
+const postback = module.context.configuration.postback
 
 
 
@@ -53,7 +53,12 @@ router.post(':stream',function (req, res) {
   Object.assign(event, r);
 
   // Post into NSQ queue
-  request.post(nsqd + "/pub?topic=evento", { body : event, json: true})
+  if (postback != null && postback != ""){
+   try {
+   request.post(postback, { body : event, json: true})
+   }catch(err){
+   }
+  }
 
   res.status(201);
   res.send(r)

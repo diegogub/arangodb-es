@@ -1,6 +1,6 @@
 {
     "name": "evento",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "eventstore for arangodb",
     "engines": {
         "arangodb": "^3.0.0"
@@ -14,8 +14,8 @@
         "postback" : "scripts/postback.js"
     },
     "configuration": {
-      "nsq": {
-        "description": "nsqd server",
+      "postback": {
+        "description": "events will be posted here after save",
         "type": "string"
       }
     },
