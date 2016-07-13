@@ -97,6 +97,26 @@ module.exports = {
          event.correlation = cres[0] + 1;
        }
 
+       // do index checking
+       try{
+         if (event.checks != null) {
+           var i = 0
+           for (i = 0; i < event.checks.length; i++) {
+             var val = event.data[event.checks[i]]
+             if (val == null || val == ""){
+               throw "invalid value"
+             }else{
+               var index = { group : event.group , key : event.checks[i], value : val }
+               db.s_indexes.save(index)
+             }
+
+           }
+         }
+       }catch(e){
+           tres.error = true
+           tres.errType = "Failed to check unique value " + e
+       }
+
        // check version lock
        if (event.version >= 0) {
          if (curVersion != event.version){
@@ -123,7 +143,7 @@ module.exports = {
        return tres;
       },
 
-      params : { event : event , col : { events : event_col }}
+      params : { event : event , col : { events : event_col , indexes : index_col }}
 
     });
 

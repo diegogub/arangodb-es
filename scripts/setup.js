@@ -5,7 +5,7 @@ const documentCollections = [
   "events",
   "indexes",
   "groups",
-  "snapshots"
+  "snapshots",
   "consumers"
 ];
 
@@ -26,7 +26,7 @@ for (const localName of documentCollections) {
  db[event_col].ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: true });
  db[event_col].ensureIndex({ type: "persistent", fields: [ "correlation" ], unique: true });
 
- db[index_col].ensureIndex({ type: "persistent", fields: [ "stream_group", "key","value" ], unique: true });
+ db[index_col].ensureIndex({ type: "persistent", fields: [ "group", "key","value" ], unique: true });
 
  db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: false});
  db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "timestamp" ], unique: false});
