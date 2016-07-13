@@ -12,6 +12,7 @@ const db = require('@arangodb').db;
 const snapshots = module.context.collection('snapshots');
 const keySchema = joi.string().required()
 .description('The key of the snapshot');
+const versionSchema = joi.number().required()
 
 const ARANGO_NOT_FOUND = errors.ERROR_ARANGO_DOCUMENT_NOT_FOUND.code;
 const ARANGO_DUPLICATE = errors.ERROR_ARANGO_UNIQUE_CONSTRAINT_VIOLATED.code;
@@ -55,12 +56,12 @@ router.post(function (req, res) {
 `);
 
 
-router.get(':stream/:key', function (req, res) {
-  const key = req.pathParams.key;
+router.get(':stream/:version', function (req, res) {
+  const version = req.pathParams.version;
   const stream = req.pathParams.stream;
   let snapshot
   try {
-    snapshot = snapshots.document(stream + '_' + key);
+    snapshot = Snapshot.getVersion(stream,version)
   } catch (e) {
     if (e.isArangoError && e.errorNum === ARANGO_NOT_FOUND) {
       throw httpError(HTTP_NOT_FOUND, e.message);
@@ -70,7 +71,7 @@ router.get(':stream/:key', function (req, res) {
   res.send(snapshot);
 }, 'detail')
 .pathParam('stream', keySchema)
-.pathParam('key', keySchema)
+.pathParam('version', versionSchema)
 .response(Snapshot, 'The snapshot.')
 .summary('Fetch a snapshot')
 .description(dd`
