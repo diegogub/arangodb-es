@@ -52,7 +52,7 @@ router.post(':stream',function (req, res) {
 
   Object.assign(event, r);
 
-  // Post into NSQ queue
+  console.log(postback)
   if (postback != null && postback != ""){
    try {
    request.post(postback, { body : event, json: true})
