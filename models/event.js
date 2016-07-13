@@ -100,6 +100,10 @@ module.exports = {
        // do index checking
        try{
          if (event.checks != null) {
+           if (event.group == "" || event.group == null){
+             throw "invalid stream group to apply check"
+           }
+
            var i = 0
            for (i = 0; i < event.checks.length; i++) {
              var val = event.data[event.checks[i]]
@@ -114,7 +118,7 @@ module.exports = {
          }
        }catch(e){
            tres.error = true
-           tres.errType = "Failed to check unique value " + e
+           tres.errType = "Failed to check unique value: " + e
        }
 
        // check version lock
