@@ -5,8 +5,7 @@ const documentCollections = [
   "events",
   "indexes",
   "groups",
-  "logs",
-  "snapshots",
+  "snapshots"
   "consumers"
 ];
 
@@ -31,6 +30,3 @@ for (const localName of documentCollections) {
 
  db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "stream", "version" ], unique: false});
  db[snapshot_col].ensureIndex({ type: "persistent", fields: [ "timestamp" ], unique: false});
-
- // create queues
- queues.create("postback")

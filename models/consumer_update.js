@@ -11,7 +11,6 @@ const consumer_col = module.context.collectionName('consumers');
 module.exports = {
   schema: {
     name : joi.string(),
-    postback : joi.string().uri( { scheme : [ 'http', 'https' ] }),
     description : joi.string()
   },
   forClient(obj) {
