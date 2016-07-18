@@ -174,7 +174,9 @@ module.exports = {
    q.bind("stream",stream);
    q.bind("from",from);
    q.bind("to",to);
-   return q.execute().toArray();
+   var result  = q.execute().toArray();
+   var response = { events : result }
+   return response;
   },
   rangeAll(from,to) {
     var q = db._createStatement({
@@ -188,7 +190,11 @@ module.exports = {
    q.bind("@col",event_col);
    q.bind("from",from);
    q.bind("to",to);
-   return q.execute().toArray();
+
+   var result  = q.execute().toArray();
+   var response = { events : result }
+
+   return response
   },
   allVersion() {
     var q = db._createStatement({
