@@ -10,8 +10,7 @@
     "main": "main.js",
     "scripts": {
         "setup": "scripts/setup.js",
-        "teardown": "scripts/teardown.js",
-        "postback" : "scripts/postback.js"
+        "teardown": "scripts/teardown.js"
     },
     "configuration": {
       "postback": {
